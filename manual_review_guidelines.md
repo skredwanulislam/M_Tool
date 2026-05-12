@@ -4,32 +4,75 @@ Thank you for helping review the M-TOOLS seed dataset! We currently have 415 han
 
 Your goal is to ensure each example is linguistically natural, logically sound, and perfectly mapped to the underlying benchmark schema. 
 
-Please divide the JSONL file between the two of you, or review it together. For each example, check the following criteria:
+---
+
+### ⚡ Quick Reference Card
+**Approve if:**
+- The query sounds like a real WhatsApp message.
+- Ground truth parameters match exactly what's in the text.
+- The tool mapping is unambiguous.
+
+**Flag if:**
+- The phrasing sounds robotic or overly formal.
+- A parameter in `ground_truth` isn't in the text or context.
+- You'd argue about whether it needs clarification.
+- The difficulty tag seems wrong.
+
+**Fix directly if:**
+- There's a typo in an English canonical value (e.g., "Daka" → "Dhaka").
+
+**Note only if:**
+- You're unsure—don't change it, just log it for discussion.
+
+---
+
+## 0. Calibration Step (Required)
+Before splitting the 415 examples, both reviewers must:
+1. Review the **same 20 examples** independently.
+2. Compare flags and difficulty scores.
+3. Discuss disagreements to align on what "natural" and "medium/hard" mean.
+*This 30-minute session prevents inconsistent tagging across the dataset.*
 
 ## 1. Linguistic Naturalness & Fluency
-- **Native Phrasing:** Does the query sound like something a real user would say or type? Avoid robotic or overly formal translations unless appropriate.
-- **Code-switching Realism:** For `bangla-english` queries, is the mix of languages natural? (e.g., "tomorrow Dhaka er weather kemon?" is good; forced mixing is bad).
-- **Transliteration Accuracy:** Does the Romanized Bangla reflect how people actually type on smartphones/keyboards? (e.g., "kemon", "daw", "koro").
-- **Cultural Relevance:** Are the local entities used correctly in context (e.g., "Star Kabab", "Dhanmondi")?
+- **The WhatsApp Test:** If you're unsure whether a query sounds natural, ask: *"Would I be embarrassed to send this on WhatsApp?"* If yes, flag it. If you'd send it without thinking, approve it.
+- **Native Phrasing:** Does the query sound like something a real user would say? Avoid robotic translations.
+- **Code-switching Realism:** For `bangla-english` queries, is the mix natural? (e.g., *"tomorrow Dhaka er weather kemon?"* is acceptable; forced mixing is bad).
+- **Transliteration Acceptability:** Flag transliterations ONLY if you would not recognize the intended word on the first read. Minor spelling variations (e.g., "kemon" vs "kmon") are acceptable and intentional.
+- **Cultural Relevance:** Are local entities used correctly (e.g., "Star Kabab", "Dhanmondi")?
 
 ## 2. Tool & Parameter Mapping
-- **Correct Tool Selection:** Does the `user_query` unambiguously map to the assigned `tool` (e.g., `get_weather`, `book_ride`)?
-- **Parameter Completeness:** If the `ground_truth` lists parameters (e.g., `{"city": "Dhaka", "date": "tomorrow"}`), are BOTH of these explicitly stated or clearly implied in the user's text?
-- **Canonicalization:** Ensure that localized terms in the text (e.g., "আগামীকাল") perfectly map to the canonical English API values in the `ground_truth` (e.g., "tomorrow"). The model will be graded on its ability to do this mapping.
+- **Correct Tool Selection:** Does the `user_query` unambiguously map to the tool?
+- **Parameter Completeness:** Check against these three states:
+    - **Explicit:** "weather in Dhaka tomorrow" → `city: Dhaka, date: tomorrow` ✅
+    - **Implied (Acceptable):** "kal er weather" (with prior context showing Dhaka) → `date: tomorrow` ✅
+    - **Assumed (Not Acceptable):** "weather tomorrow" with no city mentioned anywhere → Do NOT add `city: Dhaka` just because the dataset is Dhaka-focused. ❌
+- **Canonicalization:** Ensure localized terms (e.g., "আগামীকাল") perfectly map to English API values (e.g., "tomorrow").
 
-## 3. Ambiguous Requests (Requires Clarification)
-- **Missing Information:** If `requires_clarification` is `true`, verify that the prompt is *genuinely missing* a required parameter (e.g., "Find flights to London" is missing the origin city).
-- **Empty or Partial Ground Truth:** Ensure the `ground_truth` parameters only contain what is actually in the text, leaving the missing parameters out.
+## 3. Ambiguous Requests (Clarification)
+Reviewers must distinguish between two failure modes:
+- **Genuinely Underspecified:** (Correct) The prompt is missing a required parameter that cannot be known (e.g., "Find flights to London" missing the origin).
+- **Contextually Inferable:** (Wrong) The prompt seems missing a field, but it's inferable from common sense or context. 
+    - *Example:* "Book a ride to the airport tomorrow morning"—If you argue the origin is "missing" but a real system would use the user's home address, flag as **"ambiguity disputed."**
 
 ## 4. Failure Recovery Testing
-- **Valid Intent:** If a `failure_type_injected` is present (e.g., `invalid_city`, `timeout_simulation`), ensure the original user query is perfectly valid. The failure is injected by the *system* to test the model's reaction, so the user's input shouldn't be inherently broken.
+- **Valid Intent:** If a `failure_type_injected` is present, the original user query must be **perfectly valid**. We are testing the model's reaction to system failures, not user errors.
 
-## 5. Formatting & Schema
-- Check that the `difficulty` level accurately reflects the task (Easy = English, Medium = Multilingual/Code-switching, Hard = Parameter Localization/Ambiguity/Failures).
-- Ensure there are no typos in the English canonical parameters.
+## 5. Mechanical Difficulty Rubric
+Do not guess the difficulty. Apply this checklist:
+
+| Factor | Points |
+| :--- | :--- |
+| Non-English language present | +1 |
+| Code-switching present | +1 |
+| Localized entity needs canonicalization | +1 |
+| Parameter is implied, not explicit | +1 |
+| Failure recovery or clarification required | +1 |
+
+**Score 0–1 = Easy | 2–3 = Medium | 4–5 = Hard**
 
 ## How to Log Errors
-If you find an issue with a seed, you don't need to fix the JSON directly if you aren't comfortable. Instead, note down:
-1. The **Seed ID** (e.g., `seed_0042`)
-2. The **Issue Category** (e.g., "Unnatural Phrasing")
-3. Your **Suggested Fix** (e.g., "Change 'দিল্লি শহরের তাপমাত্রা কত?' to 'দিল্লির আজকের তাপমাত্রা কত?'")
+If you find an issue, note down:
+1. **Seed ID** (e.g., `seed_0042`)
+2. **Issue Category** (e.g., "Unnatural Phrasing")
+3. **Suggested Fix** (e.g., Change "দিল্লি শহরের তাপমাত্রা কত?" to "দিল্লির আজকের তাপমাত্রা কত?")
+
