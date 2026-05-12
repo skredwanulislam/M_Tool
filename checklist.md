@@ -141,11 +141,10 @@ Build realistic tool schemas.
 ### Failure Types
 
 - [x]  FT0: Ambiguous Entity Resolution
-- [x]  Missing parameter
-- [x]  Invalid city
-- [x]  Unsupported language
-- [x]  Tool unavailable
-- [x]  Wrong format
+- [x]  FT1: Wrong Localization
+- [x]  FT2: Missing Parameter
+- [x]  FT3: Tool Error (Recovery)
+- [x]  FT4: Multi-turn Memory Failure
 - [x]  Timeout simulation
 
 ### Deliverables
@@ -228,11 +227,12 @@ Scale benchmark using automated generation.
 
 ### Dataset Expansion Goals
 
-- [ ]  1000 English
-- [ ]  1000 multilingual
-- [ ]  1000 code-switched
-- [ ]  500 transliteration
-- [ ]  500 recovery
+- [ ]  700 English baseline
+- [ ]  700 Pure multilingual
+- [ ]  1000 Code-switched
+- [ ]  600 Transliteration
+- [ ]  500 Recovery examples
+- [ ]  500 Multi-turn examples
 
 ### Deliverables
 
@@ -266,7 +266,7 @@ Ensure benchmark quality.
 
 ### Human Verification
 
-- [ ]  Stratified Review (20–60% sample based on source)
+- [ ]  Stratified Review (20–60% sample based on source; see dataset_creation.md Stage 6)
 - [ ]  Remove unnatural prompts
 - [ ]  Fix mislabeled examples
 - [ ]  Improve edge cases

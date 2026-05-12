@@ -126,7 +126,7 @@ Each line:
 "difficulty": "",
 "requires_clarification": false,
 "conversation_context": [],
-"failure_type": null
+"failure_type_injected": null
 }
 
 ---
@@ -146,7 +146,7 @@ Each line:
 "difficulty": "medium",
 "requires_clarification": false,
 "conversation_context": [],
-"failure_type": null
+"failure_type_injected": null
 }
 
 ---
@@ -372,9 +372,13 @@ Dhaka
   "Chittagong": ["ctg", "Ctg"],
   "please": ["plz", "pls"],
   "koro": ["kro", "kr"],
-  "bolun": ["blun", "bln"]
 }
 ```
+
+Tier weighting by persona:
+- Teen / student     → 70% Tier 3, 30% Tier 2
+- Professional       → 60% Tier 1, 40% Tier 2
+- Non-tech adult     → 90% Tier 1, 10% Tier 2
 
 ## Tasks
 
@@ -467,10 +471,10 @@ Create realistic execution failures.
 - **FT0b — Temporal Ambiguity**: "kal er ride book koro" ("kal" can be yesterday or tomorrow).
 - **FT0c — Entity Underspecification**: "airport e jabo" (which airport?).
 
-### Ground Truth Format:
+### Ground Truth Format (Clarification Metadata):
+For FT0, the `ground_truth` object contains clarification details instead of tool parameters:
 ```json
 {
-  "requires_clarification": true,
   "ambiguous_parameter": "city",
   "ambiguity_type": "geographic",
   "clarification_question": "Which Hyderabad — India or Pakistan?"
@@ -536,6 +540,8 @@ Model must preserve context.
 - [ ]  Create recovery templates
 - [ ]  Create retry examples
 - [ ]  Create clarification examples
+- [ ]  Create FT0 disambiguation examples (geographic, temporal, underspecification)
+- [ ]  Create FT0 ground truth clarification format examples
 
 ---
 
