@@ -247,7 +247,8 @@ Each example should contain:
 "date": "tomorrow"
 },
 "difficulty": "medium",
-"requires_clarification": false
+"requires_clarification": false,
+"failure_type_injected": null
 }
 
 ---
@@ -265,74 +266,39 @@ high realism.
 
 ---
 
-## Phase 2 — Gemini Expansion
+## Phase 2 — Local LLM Expansion (A100)
 
-Use Gemini Free API to generate:
-
-- paraphrases
-- multilingual variants
-- code-switched examples
-
-DO NOT generate massive datasets directly.
-
----
+Use **Qwen2.5-32B-Instruct** (Primary) and **Llama-3.3-70B** (Validation) to generate:
+- **Persona-based variations**: WhatsApp style, code-switched.
+- **Pure Bangla**: Varied sentence structures.
+- **Naturalness Filter**: LLM-based scoring (score >= 3) to filter robotic output.
 
 ## Phase 3 — Rule-Based Augmentation
 
 Programmatically generate:
-
-- transliteration
-- spelling noise
-- mixed-language forms
-- formatting variation
-
-Example:
-Dhaka
-→ ঢাকা
-→ dhaka
-→ Dacca
+- **Transliteration Tiers**: Full, Mixed, and Heavy Shorthand (e.g., "amr", "kmn").
+- **Slot-Based Switching**: Constrained code-switching (e.g., switch nouns/verbs, never connectives).
+- **Spelling Noise**: Typos and phonetic variations.
 
 ---
 
-## Phase 4 — Open-Model Expansion
-
-Use:
-
-- Qwen
-- Llama
-- Gemma
-
-for local paraphrasing.
-
----
-
-## Phase 5 — Validation
+## Phase 4 — Automatic Validation
 
 Validate:
-
-- JSON syntax
-- required parameters
-- schema correctness
-- canonical parameter forms
-
-Tools:
-
-- Pydantic
-- JSONSchema
+- JSON syntax & Schema adherence
+- Canonical parameter forms (e.g., ঢাকা → Dhaka)
+- Robust extraction (Regex/Retry layers for LLM output)
 
 ---
 
-## Phase 6 — Human Verification
+## Phase 5 — Human Verification
 
-Manually inspect:
+Stratified manual inspection:
+- **Hand-crafted (S2)**: 100%
+- **LLM Expansion (S3)**: 20–30%
+- **Rule-based (S4)**: 40–60% (High noise risk)
 
-- 10–20% samples
-
-Fix:
-
-- unnatural phrasing
-- incorrect labels
-- weak examples
+Fix robotic phrasing, incorrect labels, and unnatural code-switching.
 
 ---
 
@@ -378,7 +344,11 @@ Can model recover after failure?
 
 ## Clarification Accuracy
 
-Does model ask clarification when needed?
+Does model ask clarification when needed (especially for FT0)?
+
+## Difficulty Calibration
+
+Does model performance correlate with the **Mechanical Difficulty Rubric** (+1 per factor)?
 
 ---
 
@@ -452,35 +422,26 @@ Tool recovery evaluation.
 
 ---
 
-# 17. Failure Taxonomy
+## FT0 — Ambiguous Entity Resolution
+Pre-execution ambiguity (Geographic, Temporal, or Underspecification).
 
-Create detailed categories.
-
-Examples:
-
-## FT1
-
+## FT1 — Tool Selection Failure
 Wrong tool selected.
 
-## FT2
+## FT2 — Parameter Grounding Failure
+Correct tool but localized or wrong parameters.
 
-Correct tool but wrong parameters.
+## FT3 — Localization Leakage
+API parameter contains local script (e.g., "ঢাকা").
 
-## FT3
+## FT4 — Missing Required Parameter
+Missing info not caught by clarification logic.
 
-Localized parameter leakage.
+## FT5 — Failure Recovery Collapse
+Model fails to handle system error (Timeout/503).
 
-## FT4
-
-Missing required parameter.
-
-## FT5
-
-Failure recovery collapse.
-
-## FT6
-
-Multi-turn memory inconsistency.
+## FT6 — Multi-turn Memory Inconsistency
+Context lost across conversation turns.
 
 ---
 

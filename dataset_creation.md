@@ -262,63 +262,71 @@ Tool failure scenarios.
 
 ---
 
-# STAGE 3 — GEMINI-BASED EXPANSION
+# STAGE 3 — LOCAL LLM EXPANSION
 
 ## Goal
 
-Expand seeds into multilingual variations.
+Expand 370 gold seeds into ~6,600 raw multilingual variations using local open-source models.
 
 ---
 
-## Gemini Usage Strategy
+## Infrastructure (A100 GPU)
 
-Use Gemini ONLY for:
-
-- paraphrases
-- multilingual rewrites
-- code-switching generation
-- edge cases
-
-DO NOT use Gemini for:
-
-- generating massive datasets directly
-
----
-
-## Example Prompt
-
-Generate 20 realistic multilingual variations of:
-"Book a ride from Dhanmondi to Airport tomorrow morning"
-
-Include:
-
-- Bangla
-- English
-- code-switching
-- transliteration
-
-Return JSON only.
+- **Primary Model**: `Qwen2.5-32B-Instruct`
+  - Precision: `float16` (fits 40GB VRAM)
+  - Role: Bulk generation of natural variations.
+- **Secondary Model**: `Llama-3.3-70B-Instruct`
+  - Quantization: `4-bit` (bitsandbytes)
+  - Role: Cross-validation and sample verification on 10% sample.
+- **Configuration**:
+  - Batched generation (`batch_size=8`)
+  - Checkpoints saved to `/content/drive/My Drive/M-TOOLS/checkpoints/`
+  - No API rate limits.
 
 ---
 
-## Output Example
+## Expansion Strategy (3 Templates)
 
-[
-"আগামীকাল সকালে ধানমন্ডি থেকে airport এ ride লাগবে",
-"Kal morning Dhanmondi se airport ride book karo",
-"Dhanmondi theke airport ride book koro",
-"Book a ride to airport from dhanmondi tomorrow morning"
-]
+Each gold seed is expanded via three distinct prompt templates to maximize diversity:
+
+1. **Persona-based Expansion**:
+   - Focus: Code-switching variations, "WhatsApp style" informality.
+   - Prompt: Rewrite as a rushed message between friends, mixing Bangla and English naturally.
+2. **Pure Bangla Expansion**:
+   - Focus: Varied sentence structure using Bangla script only.
+   - Goal: Test localization across formal/informal Bangla syntax.
+3. **Transliteration Expansion**:
+   - Focus: Romanized Bangla, including mobile shorthand (e.g., "kmn", "ajk", "koro").
+
+---
+
+## Robust JSON Extraction & Handling
+
+To handle model verbosity (markdown wrappers or explanations):
+- **Layer 1**: Regex-based extraction to find `[...]` arrays within the raw output.
+- **Layer 2**: JSON schema validation.
+- **Layer 3**: Auto-retry logic on parsing failure or schema mismatch.
+- Layer 4: Deduplication based on semantic similarity.
+- Layer 5: **Naturalness Filter** (Scoring prompt via Qwen2.5-32B; score >= 3 to approve, <= 2 to reject).
+
+---
+
+## Expected Yield
+
+- **Input**: 370 gold seeds
+- **Process**: 370 seeds × 3 templates × 6 usable variations per prompt
+- **Output**: ~6,600 raw → 4,000–5,000 high-quality examples after cleaning.
 
 ---
 
 ## Tasks
 
-- [ ]  Build generation prompts
-- [ ]  Build multilingual prompts
-- [ ]  Build code-switch prompts
-- [ ]  Build transliteration prompts
-- [ ]  Generate variations
+- [ ] Configure Qwen2.5-32B-Instruct on A100 with float16
+- [ ] Implement batch generation script (batch_size=8)
+- [ ] Define Persona, Pure Bangla, and Transliteration templates
+- [ ] Build JSON extraction + retry wrapper
+- [ ] Integrate Google Drive checkpointing
+- [ ] Run Llama-3.3-70B cross-validation
 
 ---
 
@@ -346,9 +354,32 @@ Dhaka
 
 ---
 
+## Transliteration Tiers
+
+| Tier | Description | Example |
+|---|---|---|
+| Tier 1 | Full romanization | "amar jonno ride book koro" |
+| Tier 2 | Mixed abbreviation | "amr jnno ride book kro" |
+| Tier 3 | Heavy shorthand | "amr ride bk kro airport" |
+
+## Shorthand Dictionary (Min. Required)
+
+```json
+{
+  "amar": ["amr", "aamr"],
+  "kemon": ["kmn", "kmon"],
+  "tomorrow": ["tmrw"],
+  "Chittagong": ["ctg", "Ctg"],
+  "please": ["plz", "pls"],
+  "koro": ["kro", "kr"],
+  "bolun": ["blun", "bln"]
+}
+```
+
 ## Tasks
 
 - [ ]  Build transliteration maps
+- [ ]  Build shorthand/slang module (Tier 2 & 3)
 - [ ]  Build spelling variation generator
 - [ ]  Build phonetic variation generator
 
@@ -369,11 +400,26 @@ Generated:
 
 ---
 
+## Switching Rules
+
+| Slot Type | Switches? | Example |
+|---|---|---|
+| Object nouns | YES | weather, ride, flight, email |
+| English verbs | YES | book, send, check, order |
+| Connectives | NEVER | er, theke, te, koro, diye |
+| Time expressions | FULL ONLY | either "kal" or "tomorrow" |
+| Place names | NEVER | stays as-is in either script |
+
+**Rules:**
+- `[Bangla connective] + [English noun]` = Valid
+- `[English connective] + [Bangla noun]` = Almost never natural
+- Never split a connective from its noun.
+
 ## Tasks
 
-- [ ]  Build token replacement system
+- [ ]  Build slot-based switching system
 - [ ]  Build bilingual phrase dictionaries
-- [ ]  Build random language mixing logic
+- [ ]  Build constrained mixing logic (Matrix Language Frame)
 
 ---
 
@@ -410,6 +456,26 @@ Create realistic execution failures.
 ---
 
 # Failure Types
+
+## FT0 — Ambiguous Entity Resolution
+
+*Occurs BEFORE tool execution.*
+
+### Sub-types:
+
+- **FT0a — Geographic Ambiguity**: "Weather in Hyderabad" (India or Pakistan?)
+- **FT0b — Temporal Ambiguity**: "kal er ride book koro" ("kal" can be yesterday or tomorrow).
+- **FT0c — Entity Underspecification**: "airport e jabo" (which airport?).
+
+### Ground Truth Format:
+```json
+{
+  "requires_clarification": true,
+  "ambiguous_parameter": "city",
+  "ambiguity_type": "geographic",
+  "clarification_question": "Which Hyderabad — India or Pakistan?"
+}
+```
 
 ## FT1 — Wrong Localization
 
@@ -496,8 +562,16 @@ Ensure benchmark quality.
 
 # Human Verification
 
-Review:
-10–20% manually.
+## Verification Rates by Source
+
+| Data Source | Verification Rate | Reason |
+|---|---|---|
+| Stage 2 Hand-crafted | 100% | Already done |
+| Stage 3 LLM Expansion | 20–30% | Coherent but check naturalness |
+| Stage 4A Transliteration| 40% | Rules miss edge cases |
+| Stage 4B Code-switch | 60% | Highest noise risk |
+| Stage 4C Noise Injection | 40% | Corruption limit check |
+| Stage 5 Failure cases | 50% | Ground truth subtlety |
 
 ---
 
@@ -556,15 +630,27 @@ Each example should include tags.
 
 - english
 - bangla
-- hindi
 - bangla-english
-- hindi-english
+- transliteration
 
-### difficulty
+*Note: Hindi excluded from v1.0 scope.*
 
-- easy
-- medium
-- hard
+### difficulty (Checklist Rubric)
+
+Award +1 point for each factor present:
+
+| Factor | Points |
+|---|---|
+| Non-English language present | +1 |
+| Code-switching present | +1 |
+| Localized entity requires canonicalization | +1 |
+| Required parameter is implied, not explicit | +1 |
+| Failure recovery or clarification required | +1 |
+
+**Final Score:**
+- 0–1 = easy
+- 2–3 = medium
+- 4–5 = hard
 
 ### category
 

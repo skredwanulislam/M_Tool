@@ -86,7 +86,7 @@ Design benchmark structure and evaluation tasks.
 - [x]  Define benchmark categories
 - [x]  Define task taxonomy
 - [x]  Define failure taxonomy
-- [x]  Define difficulty levels
+- [x]  Define mechanical difficulty rubric (Checklist-based)
 - [x]  Define annotation schema
 - [x]  Define canonicalization rules
 - [x]  Define execution environment behavior
@@ -140,6 +140,7 @@ Build realistic tool schemas.
 
 ### Failure Types
 
+- [x]  FT0: Ambiguous Entity Resolution
 - [x]  Missing parameter
 - [x]  Invalid city
 - [x]  Unsupported language
@@ -201,25 +202,29 @@ Create high-quality manual examples.
 
 Scale benchmark using automated generation.
 
-### Gemini Generation
+### Local LLM Generation (Qwen/Llama)
 
-- [ ]  Create paraphrase prompts
-- [ ]  Create multilingual prompts
-- [ ]  Create code-switch prompts
-- [ ]  Create transliteration prompts
+- [ ]  Configure Qwen2.5-32B-Instruct (A100/float16)
+- [ ]  Implement batched inference (batch_size=8)
+- [ ]  Create Persona-based (Code-switch) templates
+- [ ]  Create Pure Bangla templates
+- [ ]  Create Transliteration shorthand templates
+- [ ]  Build JSON extraction + retry logic
+- [ ]  Implement Naturalness Filter (Qwen score >= 3)
+- [ ]  Set up Google Drive checkpointing
 
 ### Rule-Based Augmentation
 
-- [ ]  Build transliteration scripts
+- [ ]  Build transliteration scripts (with Shorthand/Slang Tiers)
 - [ ]  Build spelling noise generator
 - [ ]  Build parameter variation scripts
-- [ ]  Build mixed-language generator
+- [ ]  Build mixed-language generator (Slot-based switching rules)
 
-### Open-Model Expansion
+### Model Expansion Validation
 
-- [ ]  Setup Qwen inference
-- [ ]  Setup Llama inference
-- [ ]  Generate paraphrases locally
+- [ ]  Setup Llama-3.3-70B (4-bit) for cross-validation
+- [ ]  Validate 10% sample of Qwen outputs
+- [ ]  Refine prompts based on validation results
 
 ### Dataset Expansion Goals
 
@@ -261,7 +266,7 @@ Ensure benchmark quality.
 
 ### Human Verification
 
-- [ ]  Review 10–20% samples
+- [ ]  Stratified Review (20–60% sample based on source)
 - [ ]  Remove unnatural prompts
 - [ ]  Fix mislabeled examples
 - [ ]  Improve edge cases
