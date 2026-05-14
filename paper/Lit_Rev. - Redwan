@@ -1,1 +1,71 @@
+# 2. Related Work
 
+The landscape of tool-calling research has evolved rapidly from single-API invocation studies into rich multi-step agentic frameworks. We organize the existing body of work into four thematic strands that converge on the gap M-TOOLS addresses: (1) foundational tool-use and agentic benchmarking, (2) structural complexity in tool-calling evaluation, (3) multilingual extensions and their limitations, and (4) code-switching and multilingual robustness in LLMs more broadly.
+
+---
+
+## 2.1 Foundations of LLM Tool Use
+
+The systematic study of LLM tool use was inaugurated by [Schick et al. (2023)](https://arxiv.org/abs/2302.04761), whose **Toolformer** demonstrated that a language model could learn, in a self-supervised manner, when and how to invoke external APIs — including calculators, search engines, and calendars — by interleaving API calls with standard text generation. Crucially, Toolformer operated exclusively in English and treated API parameter values as unambiguous strings, establishing an implicit English-centric assumption that would persist across much of the subsequent literature.
+
+Building on this foundation, two parallel lines of work scaled the tool-calling paradigm considerably. [Patil et al. (2023)](https://arxiv.org/abs/2305.15334) introduced **Gorilla** and the **APIBench** dataset, framing the problem as accurate selection among over 1,600 machine-learning APIs from HuggingFace, TorchHub, and TensorHub. They proposed AST-based hallucination metrics and demonstrated that retrieval-augmented generation substantially reduces incorrect API invocations. Simultaneously, [Qin et al. (2023)](https://arxiv.org/abs/2307.16789) released **ToolBench/ToolLLM**, scaling coverage to 16,000+ real-world APIs from RapidAPI across 49 categories, and proposing depth-first search decision-tree (DFSDT) reasoning for multi-step tool trajectory annotation. While both works represent significant advances in tool grounding and selection, their evaluation frameworks assume English-language user queries and treat parameter values as straightforward string literals. Neither framework confronts the possibility that a user might express a parameter value in a non-canonical script or code-mixed register.
+
+The [HuggingGPT](https://arxiv.org/abs/2303.17580) system (Shen et al., 2023) extended the paradigm further by coordinating multiple specialized AI models as tools within a single conversational agent, while [AgentBench](https://arxiv.org/abs/2308.03688) (Liu et al., 2023) provided a broader evaluation of LLM agents across interactive decision-making environments. [RESTBench](https://arxiv.org/abs/2403.02329) (Patil et al., 2024) subsequently targeted realistic RESTful API interactions with live execution checks. Collectively, these works established tool-calling evaluation as a serious subfield — but uniformly within English-language, clean-input settings.
+
+---
+
+## 2.2 Structural Complexity in Tool-Calling Benchmarks
+
+As the field matured, researchers began examining structural dimensions of difficulty beyond simple API selection. The [Berkeley Function Calling Leaderboard (BFCL)](https://gorilla.cs.berkeley.edu/leaderboard.html) (Patil et al., 2024) introduced a comprehensive evaluation framework using AST matching and live executability checks across diverse function-call types, including parallel, nested, and multi-turn interactions. BFCL remains the dominant reference point for measuring structural correctness in tool calling, yet its scope is explicitly English-centric and its metrics do not surface failures arising from linguistic variation in parameter values.
+
+[NESTFUL](https://arxiv.org/abs/2409.03797) (Bangalore et al., 2024) addressed a complementary gap by evaluating LLMs on nested API call sequences, where the output of one tool serves as the input of another. Their results reveal sharp performance degradation in interdependent tool-use scenarios, highlighting that even structurally correct tool selection can fail downstream due to parameter propagation errors. This finding is directly relevant to M-TOOLS: if parameter values are additionally subject to localization noise, the compound failure rate in nested pipelines is likely to be severe.
+
+[FunctionChat-Bench](https://arxiv.org/abs/2411.14054) (Lee et al., 2024) moved beyond isolated function calls by incorporating multi-turn conversational contexts in Korean tool-use dialogues. This work is noteworthy as one of the few benchmarks to evaluate a non-English language, and its results show that conversational coherence and tool-call accuracy degrade simultaneously in Korean settings. However, FunctionChat-Bench targets Korean as a standalone language without examining the mixed-language register that characterizes real-world interactions among bilingual or multilingual speakers. It also does not evaluate canonicalization of localized parameter values or failure recovery.
+
+A parallel line of work on robustness has examined how noise perturbs tool-calling behavior ([RoTBench](https://arxiv.org/abs/2401.08326), Ye et al., 2024). These studies introduce controlled syntactic perturbations to tool schemas and user prompts, finding that even modest noise substantially reduces execution success. While these studies demonstrate the brittleness of current models to input variation, they focus exclusively on English-language noise and do not address the richer, structurally motivated variation that arises from code-switching or transliteration.
+
+---
+
+## 2.3 Multilingual Tool Calling: Progress and Persistent Gaps
+
+The most directly related prior work is [MASSIVE-Agents](https://aclanthology.org/2025.findings-emnlp.1099/) (Fitzgerald et al., 2025), which reformatted the MASSIVE multilingual intent dataset into a function-calling benchmark spanning 52 languages and 47,020 samples. Evaluating 21 models, MASSIVE-Agents provides compelling evidence of a severe multilingual performance gap: the best-performing model achieved only 34.05% average accuracy across languages, compared to 57.37% in English, with some lower-resource languages scoring below 7%. These results establish beyond doubt that multilingual tool calling is a critical and underserved problem.
+
+However, MASSIVE-Agents has three structural limitations that M-TOOLS is specifically designed to address. First, its evaluation methodology relies on AST matching without live execution, meaning it cannot detect canonicalization failures — cases where a model correctly identifies the tool and argument name but supplies a localized parameter value (e.g., "ঢাকা" instead of "Dhaka") that would cause real API execution to fail silently. Second, the benchmark treats each language in isolation, constructing test examples as direct translations of English utterances; it does not evaluate the code-switched and transliterated inputs that characterize natural multilingual communication in regions such as South Asia. Third, it does not include failure injection or recovery evaluation, precluding assessment of whether models can dynamically adapt when execution errors occur due to localization mismatches.
+
+A closely related concurrent study, [MLCL](https://arxiv.org/abs/2601.05366) (Luo et al., 2026), introduces a diagnostic benchmark for multilingual tool calling across Chinese, Hindi, and Igbo. Through fine-grained error analysis, Luo et al. independently identify **parameter value language mismatch** as the dominant failure mode, observing that models frequently generate semantically appropriate parameter values in the user's language while violating language-invariant execution conventions. They further show that inference-time mitigation strategies (partial translation, explicit prompting, pre/post-translation) reduce certain error types but fail to recover English-level performance consistently. MLCL thus provides strong independent validation of the core failure phenomenon M-TOOLS targets. Critically, however, MLCL focuses on monolingual query settings for three specific languages and does not evaluate code-switching, transliteration, or Bangla — a language with over 230 million speakers and a well-documented Bangla-English code-switching register.
+
+---
+
+## 2.4 Code-Switching and Transliteration in NLP
+
+Code-switching — the within-utterance alternation between two or more languages — poses known challenges for NLP systems. Classic work established evaluation benchmarks for code-switched text ([GLUECoS](https://aclanthology.org/2020.acl-main.329/), Aguilar et al., 2020; [LinCE](https://aclanthology.org/2020.lrec-1.223/), Aguilar et al., 2020), and the field has since documented consistent performance degradation for code-switched inputs relative to monolingual baselines across tasks including intent classification, named entity recognition, and sentiment analysis ([Winata et al., 2021](https://aclanthology.org/2021.acl-long.558/); [Winata et al., 2023](https://arxiv.org/abs/2305.14235)).
+
+Recent surveys of code-switching in the LLM era ([Yoo et al., 2024](https://arxiv.org/abs/2404.13979); [survey, 2025](https://arxiv.org/abs/2510.07037)) document that large models exhibit asymmetric code-switching behavior: non-English tokens embedded in English contexts tend to degrade performance, while English tokens embedded in non-English contexts often improve it — a pattern consistent with the English-heavy pretraining of most frontier models. For Bangla specifically, work on Bangla-English-Hindi code-mixed text ([Goswami et al., 2023](https://arxiv.org/abs/2306.00041); [Raihan et al., 2023](https://arxiv.org/abs/2310.00905)) demonstrates that current models handle Bangla-English switching poorly, particularly when Bangla is written in the Roman script (transliteration), as in common WhatsApp and social media communication patterns.
+
+Despite this body of work, virtually none of it has examined code-switching in the context of agentic tool use. The transition from understanding code-switched user intent to generating canonical, API-compatible parameter values represents a qualitatively distinct challenge: comprehension errors and parameter grounding errors can occur independently, and the latter are invisible to standard semantic evaluation metrics. M-TOOLS is the first benchmark to isolate and measure this specific failure mode at the intersection of code-switching and tool execution.
+
+---
+
+## 2.5 Summary: The Language–Tool Boundary Gap
+
+The literature reviewed above reveals a consistent blind spot. Structural tool-calling benchmarks ([ToolBench](https://arxiv.org/abs/2307.16789), [Gorilla](https://arxiv.org/abs/2305.15334), [BFCL](https://gorilla.cs.berkeley.edu/leaderboard.html), [NESTFUL](https://arxiv.org/abs/2409.03797)) achieve rigorous evaluation of English-language invocations but presuppose clean, canonical inputs. Multilingual benchmarks ([MASSIVE-Agents](https://aclanthology.org/2025.findings-emnlp.1099/)) demonstrate the scale of non-English performance degradation but rely on static AST matching and isolated monolingual queries rather than realistic mixed-language interactions. The emerging diagnostic literature ([MLCL](https://arxiv.org/abs/2601.05366), Luo et al., 2026) begins to characterize parameter localization failures, but does not cover code-switching, transliteration, Bangla, or failure recovery evaluation. Code-switching NLP research provides rich characterization of linguistic mixing patterns but has not been applied to the tool-execution setting.
+
+M-TOOLS addresses this compound gap by introducing an execution benchmark that specifically targets the **language–tool boundary**: the critical transition point at which an LLM must map a noisy, code-switched or transliterated multilingual query onto a rigid, canonical English API parameter. By combining realistic Bangla-English code-switching, Roman transliteration variants, parameter canonicalization evaluation, mock execution environments, and controlled failure injection across multiple tool categories, M-TOOLS provides evaluation infrastructure that no existing benchmark supplies.
+
+---
+
+## 2.6 Gap Analysis
+
+The table below summarizes the key capabilities and limitations of existing benchmarks relative to M-TOOLS across five critical evaluation dimensions.
+
+| Benchmark | Multilingual Support | Code-Switching | Transliteration | Parameter Localization | Execution & Failure Recovery |
+| --- | --- | --- | --- | --- | --- |
+| [ToolBench](https://arxiv.org/abs/2307.16789) | ❌ | ❌ | ❌ | ❌ | ✅ (Basic) |
+| [Gorilla / APIBench](https://arxiv.org/abs/2305.15334) | ❌ | ❌ | ❌ | ❌ | ✅ (AST/Exec) |
+| [BFCL](https://gorilla.cs.berkeley.edu/leaderboard.html) | ❌ | ❌ | ❌ | ❌ | ✅ (AST/Exec) |
+| [RESTBench](https://arxiv.org/abs/2403.02329) | ❌ | ❌ | ❌ | ❌ | ✅ (REST APIs) |
+| [NESTFUL](https://arxiv.org/abs/2409.03797) | ❌ | ❌ | ❌ | ❌ | ✅ (Nested APIs) |
+| [FunctionChat-Bench](https://arxiv.org/abs/2411.14054) | Partial (Korean) | ❌ | ❌ | ❌ | Partial |
+| [MASSIVE-Agents](https://aclanthology.org/2025.findings-emnlp.1099/) | ✅ (52 langs) | ❌ | ❌ | ❌ | ❌ (AST only) |
+| [MLCL](https://arxiv.org/abs/2601.05366) | Partial (3 langs) | ❌ | ❌ | Partial | ❌ |
+| **M-TOOLS (Ours)** | ✅ (Targeted) | ✅ | ✅ | ✅ | ✅ |
