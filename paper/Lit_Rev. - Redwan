@@ -2,7 +2,7 @@
 
 The landscape of tool-calling research has evolved rapidly from single-API invocation studies into rich multi-step agentic frameworks. We organize the existing body of work into four thematic strands that converge on the gap M-TOOLS addresses: (1) foundational tool-use and agentic benchmarking, (2) structural complexity in tool-calling evaluation, (3) multilingual extensions and their limitations, and (4) code-switching and multilingual robustness in LLMs more broadly.
 
----
+
 
 ## 2.1 Foundations of LLM Tool Use
 
@@ -12,7 +12,7 @@ Building on this foundation, two parallel lines of work scaled the tool-calling 
 
 The [HuggingGPT](https://arxiv.org/abs/2303.17580) system (Shen et al., 2023) extended the paradigm further by coordinating multiple specialized AI models as tools within a single conversational agent, while [AgentBench](https://arxiv.org/abs/2308.03688) (Liu et al., 2023) provided a broader evaluation of LLM agents across interactive decision-making environments. [RESTBench](https://arxiv.org/abs/2403.02329) (Patil et al., 2024) subsequently targeted realistic RESTful API interactions with live execution checks. Collectively, these works established tool-calling evaluation as a serious subfield — but uniformly within English-language, clean-input settings.
 
----
+
 
 ## 2.2 Structural Complexity in Tool-Calling Benchmarks
 
@@ -24,7 +24,7 @@ As the field matured, researchers began examining structural dimensions of diffi
 
 A parallel line of work on robustness has examined how noise perturbs tool-calling behavior ([RoTBench](https://arxiv.org/abs/2401.08326), Ye et al., 2024). These studies introduce controlled syntactic perturbations to tool schemas and user prompts, finding that even modest noise substantially reduces execution success. While these studies demonstrate the brittleness of current models to input variation, they focus exclusively on English-language noise and do not address the richer, structurally motivated variation that arises from code-switching or transliteration.
 
----
+
 
 ## 2.3 Multilingual Tool Calling: Progress and Persistent Gaps
 
@@ -34,7 +34,7 @@ However, MASSIVE-Agents has three structural limitations that M-TOOLS is specifi
 
 A closely related concurrent study, [MLCL](https://arxiv.org/abs/2601.05366) (Luo et al., 2026), introduces a diagnostic benchmark for multilingual tool calling across Chinese, Hindi, and Igbo. Through fine-grained error analysis, Luo et al. independently identify **parameter value language mismatch** as the dominant failure mode, observing that models frequently generate semantically appropriate parameter values in the user's language while violating language-invariant execution conventions. They further show that inference-time mitigation strategies (partial translation, explicit prompting, pre/post-translation) reduce certain error types but fail to recover English-level performance consistently. MLCL thus provides strong independent validation of the core failure phenomenon M-TOOLS targets. Critically, however, MLCL focuses on monolingual query settings for three specific languages and does not evaluate code-switching, transliteration, or Bangla — a language with over 230 million speakers and a well-documented Bangla-English code-switching register.
 
----
+
 
 ## 2.4 Code-Switching and Transliteration in NLP
 
@@ -44,7 +44,7 @@ Recent surveys of code-switching in the LLM era ([Yoo et al., 2024](https://arxi
 
 Despite this body of work, virtually none of it has examined code-switching in the context of agentic tool use. The transition from understanding code-switched user intent to generating canonical, API-compatible parameter values represents a qualitatively distinct challenge: comprehension errors and parameter grounding errors can occur independently, and the latter are invisible to standard semantic evaluation metrics. M-TOOLS is the first benchmark to isolate and measure this specific failure mode at the intersection of code-switching and tool execution.
 
----
+
 
 ## 2.5 Summary: The Language–Tool Boundary Gap
 
@@ -52,7 +52,7 @@ The literature reviewed above reveals a consistent blind spot. Structural tool-c
 
 M-TOOLS addresses this compound gap by introducing an execution benchmark that specifically targets the **language–tool boundary**: the critical transition point at which an LLM must map a noisy, code-switched or transliterated multilingual query onto a rigid, canonical English API parameter. By combining realistic Bangla-English code-switching, Roman transliteration variants, parameter canonicalization evaluation, mock execution environments, and controlled failure injection across multiple tool categories, M-TOOLS provides evaluation infrastructure that no existing benchmark supplies.
 
----
+
 
 ## 2.6 Gap Analysis
 
